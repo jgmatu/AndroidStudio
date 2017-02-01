@@ -1,3 +1,10 @@
 <resources>
     <string name="app_name">Hello world!</string>
+    <string name="but_name">Mi boton!</string>
+    <string name="to">Dest</string>
+    <string name="subject">mail</string>
+    <string name="message">Data</string>
+    <string name="send">Send!</string>
+    <string name="menu_name">Menu!</string>
+    <string name="menu_help">Help!</string>
 </resources>
