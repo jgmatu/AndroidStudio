@@ -31,64 +31,71 @@ public class BuscaMinas extends Activity {
             pos = npos;
         }
 
-        private boolean isBorder(int numPos) {
-            return numPos % FIELDS == 0;
-        }
+        private boolean isBorderRigth(int numPos) {return (numPos + 1) % FIELDS == 0;}
+        private boolean isBorderLeft(int numPos) {return numPos % FIELDS == 0;}
 
         private int numMines () {
             int mines = 0;
 
-            int upLeft = pos + FIELDS - 1;
-            int up = pos + FIELDS;
-            int upRigth = pos + FIELDS + 1;
+            int upLeft = pos - FIELDS - 1;
+            int up = pos - FIELDS;
+            int upRigth = pos - FIELDS + 1;
             int left = pos - 1;
             int rigth = pos + 1;
-            int downLeft = pos - FIELDS - 1;
-            int down = pos - FIELDS;
-            int downRigth = pos - FIELDS + 1;
+            int downLeft = pos + FIELDS - 1;
+            int down = pos + FIELDS;
+            int downRigth = pos + FIELDS + 1;
 
-
-            if (upLeft < LIMIT) {
-                if (map[upLeft] == STATES.MINE) mines++;
-                Log.v(TAG, "Mina en casilla abajo izq... : " + upLeft);
+            if (upLeft > 0 && !isBorderLeft(pos)) {
+                if (map[upLeft] == STATES.MINE) {
+                    mines++;
+                    Log.v(TAG, "Mina en casilla arriba izq... : " + upLeft);
+                }
             }
-
-            if (up < LIMIT) {
-                if (map[up] == STATES.MINE) mines++;
-                Log.v(TAG, "Mina en casilla abajo... : " + up);
+            if (up > 0) {
+                if (map[up] == STATES.MINE) {
+                    mines++;
+                    Log.v(TAG, "Mina en casilla arriba... : " + up);
+                }
             }
-
-            if (upRigth < LIMIT && !isBorder(upRigth)) {
-                if (map[upRigth] == STATES.MINE) mines++;
-                Log.v(TAG, "Mina en casilla abajo der... : " + upRigth);
+            if (upRigth > 0 && !isBorderRigth(pos)) {
+                if (map[upRigth] == STATES.MINE) {
+                    mines++;
+                    Log.v(TAG, "Mina en casilla arriba der... : " + upRigth);
+                }
             }
-
-            if (left > 0) {
-                if (map[left] == STATES.MINE) mines++;
-                Log.v(TAG, "Mina en casilla abajo izq... : " + left);
+            if (left >= 0) {
+                if (map[left] == STATES.MINE) {
+                    mines++;
+                    Log.v(TAG, "Mina en casilla izq... : " + left);
+                }
             }
-
-            if (rigth < LIMIT && !isBorder(rigth)) {
-                if (map[rigth] == STATES.MINE) mines++;
-                Log.v(TAG, "Mina en casilla der... : " + rigth);
+            if (rigth < LIMIT && !isBorderRigth(pos)) {
+                if (map[rigth] == STATES.MINE) {
+                    mines++;
+                    Log.v(TAG, "Mina en casilla der... : " + rigth);
+                }
             }
-
-            if (downLeft > 0) {
-                if (map[downLeft] == STATES.MINE) mines++;
-                Log.v(TAG, "Mina en casilla arriba izq... : " + downLeft);
+            if (downLeft < LIMIT && !isBorderLeft(pos)) {
+                if (map[downLeft] == STATES.MINE) {
+                    mines++;
+                    Log.v(TAG, "Mina en casilla abajo izq... : " + downLeft);
+                }
             }
-
-            if (down > 0) {
-                if (map[down] == STATES.MINE) mines++;
-                Log.v(TAG, "Mina en casilla arriba... : " + down);
+            if (down < LIMIT) {
+                if (map[down] == STATES.MINE) {
+                    mines++;
+                    Log.v(TAG, "Mina en casilla abajo... : " + down);
+                }
             }
-
-            if (downRigth > 0 && !isBorder(downRigth)) {
-                if (map[downRigth] == STATES.MINE) mines++;
-                Log.v(TAG, "Mina en casilla arriba der... : " + downRigth);
+            if (downRigth < LIMIT && !isBorderRigth(pos)) {
+                if (map[downRigth] == STATES.MINE) {
+                    mines++;
+                    Log.v(TAG, "Mina en casilla abajo der... : " + downRigth);
+                }
             }
-
-            Log.v(TAG , "Mines , pos  : " + mines + pos);
+            Log.v(TAG , "Mines :" + mines);
+            Log.v(TAG , "Position : " + pos);
             return mines;
         }
 
@@ -103,6 +110,7 @@ public class BuscaMinas extends Activity {
 
             if (map[pos] == STATES.FREE) {
                 mines = numMines();
+
                 if (mines == 0) squareFrees();
                 if (mines == 1) imgBut.setImageResource(R.mipmap.mines1);
                 if (mines == 2) imgBut.setImageResource(R.mipmap.mines2);
@@ -112,6 +120,7 @@ public class BuscaMinas extends Activity {
                 if (mines == 6) imgBut.setImageResource(R.mipmap.mines6);
                 if (mines == 7) imgBut.setImageResource(R.mipmap.mines7);
                 if (mines == 8) imgBut.setImageResource(R.mipmap.mines8);
+
             } else if (map[pos] == STATES.MINE) {
                 imgBut.setImageResource(mine);
             }
@@ -121,12 +130,12 @@ public class BuscaMinas extends Activity {
     private void createMap() {
         map = new STATES[FIELDS * ROWS];
         Random random = new Random();
-        random.setSeed(7);
+        random.setSeed(4);
         frees = 0;
 
         for (int i = 0 ; i < ROWS ; i++) {
             for (int j = 0 ; j < FIELDS ; j++) {
-                if (random.nextLong() % 3 == 0) {
+                if (random.nextLong() % 2 == 0) {
                     map[i * FIELDS + j] = STATES.MINE;
                 } else {
                     map[i * FIELDS + j] = STATES.FREE;
@@ -149,6 +158,7 @@ public class BuscaMinas extends Activity {
 
                 imgbut.setImageResource(R.mipmap.square_green);
                 imgbut.setOnClickListener(new MsgBoton(i * FIELDS + j));
+                row.addView(imgbut);
             }
             table.addView(row);
         }
