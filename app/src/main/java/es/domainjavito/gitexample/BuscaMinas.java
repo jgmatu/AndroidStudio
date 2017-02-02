@@ -10,113 +10,126 @@ import android.widget.TableRow;
 
 import java.util.Random;
 
-import static es.domainjavito.gitexample.R.mipmap.mine;
-
 
 public class BuscaMinas extends Activity {
     private static String TAG = "Debug Callback() : ";
 
     private static int ROWS = 8;
     private static int FIELDS = 5;
+    private static int EASY = 4;
 
-    private enum STATES {FREE, MINE};
-    private STATES[] map;
+    private boolean[][] map;
     private int frees;
 
-    private class MsgBoton implements View.OnClickListener {
-        private int pos;
-        private final int LIMIT = ROWS * FIELDS - 1;
+    private class Casilla {
+        private int row;
+        private int field;
+        private ImageButton imgBut;
+        private boolean ismine;
 
-        public MsgBoton (int npos) {
-            pos = npos;
+        public Casilla (int nrow , int nfield , boolean state) {
+            row = nrow;
+            field = nfield;
+            ismine = state;
         }
 
-        private boolean isBorderRigth(int numPos) {return (numPos + 1) % FIELDS == 0;}
-        private boolean isBorderLeft(int numPos) {return numPos % FIELDS == 0;}
+        public ImageButton getImgBut() {
+            return imgBut;
+        }
 
-        private int numMines (int npos) {
+        public int getRow() {
+            return row;
+        }
+
+        public int getField() {
+            return field;
+        }
+
+        public boolean ismine() {
+            return ismine;
+        }
+
+        private String printState() {
+            String txt;
+
+            if (ismine) {
+                txt = String.format("Mine!");
+            } else {
+                txt = String.format("Not mine");
+            }
+            return txt;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("%s : (%d , %d)", printState() , row , field);
+        }
+    }
+
+    private class MsgBoton implements View.OnClickListener {
+        private Casilla casilla;
+
+        public MsgBoton (ImageButton imagebut ,Casilla c) {
+            casilla = c;
+        }
+
+        private boolean isCasilla(int i , int j) {
+            return i == 0 && j == 0;
+        }
+
+        private boolean isLimit(Casilla c , int row , int field){
+            return c.getRow() + row >= ROWS || c.getField() + field >= FIELDS ||
+                    c.getField() + field < 0 || c.getRow() + row < 0;
+        }
+
+        private int numMines (Casilla c) {
             int mines = 0;
 
-            int upLeft = npos - FIELDS - 1;
-            int up = npos - FIELDS;
-            int upRigth = npos - FIELDS + 1;
-            int left = npos - 1;
-            int rigth = npos + 1;
-            int downLeft = npos + FIELDS - 1;
-            int down = npos + FIELDS;
-            int downRigth = npos + FIELDS + 1;
-
-            if (upLeft > 0 && !isBorderLeft(npos)) {
-                if (map[upLeft] == STATES.MINE) {
-                    mines++;
-                    Log.v(TAG, "Mina en casilla arriba izq... : " + upLeft);
+            for (int i = 1; i >= -1 ; i--) {
+                for (int j = 1; j >= -1 ; j--) {
+                    Log.v(TAG, String.format("Position : (%d , %d)" , c.getRow() + i , c.getField() + j));
+                    if (isCasilla(i , j) || isLimit(c, i , j)) {
+                        continue;
+                    }
+                    if (map[c.getRow() + i][c.getField() + j]) {
+                        mines++;
+                    }
                 }
             }
-            if (up > 0) {
-                if (map[up] == STATES.MINE) {
-                    mines++;
-                    Log.v(TAG, "Mina en casilla arriba... : " + up);
-                }
-            }
-            if (upRigth > 0 && !isBorderRigth(npos)) {
-                if (map[upRigth] == STATES.MINE) {
-                    mines++;
-                    Log.v(TAG, "Mina en casilla arriba der... : " + upRigth);
-                }
-            }
-            if (left >= 0 && !isBorderLeft(npos)) {
-                if (map[left] == STATES.MINE) {
-                    mines++;
-                    Log.v(TAG, "Mina en casilla izq... : " + left);
-                }
-            }
-            if (rigth < LIMIT && !isBorderRigth(npos)) {
-                if (map[rigth] == STATES.MINE) {
-                    mines++;
-                    Log.v(TAG, "Mina en casilla der... : " + rigth);
-                }
-            }
-            if (downLeft < LIMIT && !isBorderLeft(npos)) {
-                if (map[downLeft] == STATES.MINE) {
-                    mines++;
-                    Log.v(TAG, "Mina en casilla abajo izq... : " + downLeft);
-                }
-            }
-            if (down < LIMIT) {
-                if (map[down] == STATES.MINE) {
-                    mines++;
-                    Log.v(TAG, "Mina en casilla abajo... : " + down);
-                }
-            }
-            if (downRigth < LIMIT && !isBorderRigth(npos)) {
-                if (map[downRigth] == STATES.MINE) {
-                    mines++;
-                    Log.v(TAG, "Mina en casilla abajo der... : " + downRigth);
-                }
-            }
-            Log.v(TAG , "Mines :" + mines);
-            Log.v(TAG , "Position : " + npos);
             return mines;
         }
 
-        private void squareFrees(int npos) {
-            int mines = numMines(npos);
+        private boolean[][] initPaint() {
+            boolean[][] paint = new boolean[ROWS][FIELDS];
 
-            if (mines != 0) {
-                setMines();
+            for (int i = 0 ; i < ROWS ; i++) {
+                for (int j = 0 ; j < FIELDS ; j++) {
+                    paint[i][j] = false;
+                }
+            }
+            return paint;
+        }
+
+        private void squareFrees(Casilla c) {
+            boolean[][] paint = initPaint();
+
+            if (isLimit(c , c.getRow() , c.getField()) || c.ismine) {
                 return;
             }
 
-            squareFrees(npos - 1);
-            squareFrees(npos + 1);
-            squareFrees(npos - FIELDS);
-            squareFrees(npos + FIELDS);
+            if (numMines(c) > 0) {
+                paint[c.getRow()][c.getField()] = true;
+                return;
+            }
+            squareFrees();
         }
 
-        private void setMines (ImageButton imgBut) {
-            int mines = numMines(pos);
 
-            if (mines == 0) squareFrees(pos);
+        private void setMines (ImageButton imgBut) {
+            int mines = numMines(casilla);
+
+            // Dibujo este boton...
+            if (mines == 0) squareFrees(casilla);
             if (mines == 1) imgBut.setImageResource(R.mipmap.mines1);
             if (mines == 2) imgBut.setImageResource(R.mipmap.mines2);
             if (mines == 3) imgBut.setImageResource(R.mipmap.mines3);
@@ -131,33 +144,29 @@ public class BuscaMinas extends Activity {
         public void onClick(View v) {
             ImageButton imgBut = (ImageButton) v;
 
-            if (map[pos] == STATES.FREE) {
+            if (casilla.ismine()) {
+                imgBut.setImageResource(R.mipmap.mine);
+            } else {
                 setMines(imgBut);
-            } else if (map[pos] == STATES.MINE) {
-                imgBut.setImageResource(mine);
             }
+            Log.v(TAG , casilla.toString());
         }
     }
 
-    private void createMap() {
-        map = new STATES[FIELDS * ROWS];
+    private boolean[][] createMap() {
+        boolean[][] m = new boolean[ROWS][FIELDS];
         Random random = new Random();
         random.setSeed(17);
-        frees = 0;
 
         for (int i = 0 ; i < ROWS ; i++) {
             for (int j = 0 ; j < FIELDS ; j++) {
-                if (random.nextLong() % 2 == 0) {
-                    map[i * FIELDS + j] = STATES.MINE;
-                } else {
-                    map[i * FIELDS + j] = STATES.FREE;
-                    frees++;
-                }
+                m[i][j] = random.nextLong() % EASY == 0;
             }
         }
+        return m;
     }
 
-    private void createUI () {
+    private void createUI (boolean[][] m) {
         TableLayout table = (TableLayout) findViewById(R.id.table);
 
         for (int i = 0 ; i < ROWS ; i++) {
@@ -169,7 +178,7 @@ public class BuscaMinas extends Activity {
                 ImageButton imgbut = new ImageButton(this);
 
                 imgbut.setImageResource(R.mipmap.square_green);
-                imgbut.setOnClickListener(new MsgBoton(i * FIELDS + j));
+                imgbut.setOnClickListener(new MsgBoton(imgbut , new Casilla(i , j , m[i][j])));
                 row.addView(imgbut);
             }
             table.addView(row);
@@ -180,8 +189,8 @@ public class BuscaMinas extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_mines);
-        createMap();
-        createUI();
+        map = createMap();
+        createUI(map);
     }
 
     @Override
